@@ -937,7 +937,9 @@ function CampaignsSection({ token, campaigns, loading, onRefresh, campaignToEdit
 
       // If in editor mode, get the HTML from the editor
       if (viewMode === 'editor' && editorInstanceRef.current) {
-        htmlToExport = editorInstanceRef.current.getHtml();
+        const body = editorInstanceRef.current.getHtml();
+        const css  = editorInstanceRef.current.getCss();
+        htmlToExport = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${css}</style></head><body>${body}</body></html>`;
       }
 
       try {
@@ -977,7 +979,9 @@ function CampaignsSection({ token, campaigns, loading, onRefresh, campaignToEdit
 
       // If in editor mode, get the HTML from the editor
       if (viewMode === 'editor' && editorInstanceRef.current) {
-        htmlToCopy = editorInstanceRef.current.getHtml();
+        const body = editorInstanceRef.current.getHtml();
+        const css  = editorInstanceRef.current.getCss();
+        htmlToCopy = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${css}</style></head><body>${body}</body></html>`;
       }
 
       try {
@@ -1015,8 +1019,10 @@ function CampaignsSection({ token, campaigns, loading, onRefresh, campaignToEdit
       setSavingChanges(true);
 
       try {
-        // Get HTML from editor
-        const updatedHtml = editorInstanceRef.current.getHtml();
+        // Get full HTML from editor (body + css combined into proper document)
+        const body = editorInstanceRef.current.getHtml();
+        const css  = editorInstanceRef.current.getCss();
+        const updatedHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${css}</style></head><body>${body}</body></html>`;
 
         // Send update to backend
         const response = await axios.patch(

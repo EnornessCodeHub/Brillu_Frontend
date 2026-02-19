@@ -1132,39 +1132,37 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{streamingStatus}</span>
-                    <span className="text-sm text-muted-foreground">{campaignProgress}%</span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            await axios.post(`${API}/api/campaigns/${generatedCampaignId}/cancel`, {}, {
+                              headers: { Authorization: `Bearer ${token}` }
+                            });
+                            setError('Generation cancelled.');
+                            setLoading(false);
+                            setStreamingStatus('');
+                            setCampaignProgress(0);
+                          } catch (err) {
+                            console.error('Cancel error:', err);
+                          }
+                        }}
+                        className="text-destructive border-destructive/50 hover:bg-destructive/10 h-6 px-2 text-xs"
+                      >
+                        <X className="w-3 h-3 mr-1" />
+                        Stop
+                      </Button>
+                      <span className="text-sm text-muted-foreground">{campaignProgress}%</span>
+                    </div>
                   </div>
                   <div className="w-full bg-secondary rounded-full h-2.5 overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-primary transition-all duration-500 ease-out rounded-full"
                       style={{ width: `${campaignProgress}%` }}
                     />
                   </div>
-                </div>
-
-                {/* Stop Generation Button */}
-                <div className="flex justify-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={async () => {
-                      try {
-                        await axios.post(`${API}/api/campaigns/${generatedCampaignId}/cancel`, {}, {
-                          headers: { Authorization: `Bearer ${token}` }
-                        });
-                        setError('Generation cancelled.');
-                        setLoading(false);
-                        setStreamingStatus('');
-                        setCampaignProgress(0);
-                      } catch (err) {
-                        console.error('Cancel error:', err);
-                      }
-                    }}
-                    className="text-destructive border-destructive/50 hover:bg-destructive/10"
-                  >
-                    <X className="w-4 h-4 mr-1" />
-                    Stop Generation
-                  </Button>
                 </div>
 
                 {/* Stage Indicators (4 steps: Brief, Template, Content, Final) */}
