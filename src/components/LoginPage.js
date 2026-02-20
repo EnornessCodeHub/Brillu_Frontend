@@ -83,7 +83,7 @@ export default function LoginPage({ onLogin }) {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-muted-foreground mt-6">
+          {/* <p className="text-center text-sm text-muted-foreground mt-6">
             Don&apos;t have an account?{' '}
             <button
               type="button"
@@ -92,7 +92,7 @@ export default function LoginPage({ onLogin }) {
             >
               Create account
             </button>
-          </p>
+          </p> */}
         </div>
       </div>
 

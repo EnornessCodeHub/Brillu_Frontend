@@ -1,6 +1,8 @@
-import React from 'react';
-import { Mail, Sparkles, LayoutTemplate, Palette, Type, PenTool, Share2, Image as ImageIcon, Layout, Database, Plug, Settings, ChevronDown, ChevronRight, LogOut, PencilRuler, BookOpen, Camera } from 'lucide-react';
+import React, { useState } from 'react';
+import { Mail, Sparkles, LayoutTemplate, Palette, Type, PenTool, Share2, Image as ImageIcon, Layout, Database, Plug, Settings, ChevronDown, ChevronRight, LogOut, PencilRuler, BookOpen, Camera, Star, MessageSquare, X } from 'lucide-react';
 import { Button } from '../ui/button';
+import axios from 'axios';
+import API from '../../config/api.config';
 
 export default function Sidebar({ activeSection, onSectionChange, onLogout }) {
   const menuItems = [
@@ -53,8 +55,38 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }) {
     { id: 'settings', icon: Settings, label: 'Settings' }
   ];
 
-  const [expandedMenus, setExpandedMenus] = React.useState([]);
-  const [expandedGroups, setExpandedGroups] = React.useState([]);
+  const [expandedMenus, setExpandedMenus] = useState([]);
+  const [expandedGroups, setExpandedGroups] = useState([]);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleFeedbackSubmit = async () => {
+    if (!rating) return;
+    setSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/api/feedback`, { rating, message: feedbackText }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch (e) {
+      // feedback is non-critical, proceed to success anyway
+    } finally {
+      setSubmitting(false);
+      setSubmitted(true);
+    }
+  };
+
+  const closeFeedback = () => {
+    setShowFeedback(false);
+    setRating(0);
+    setHoveredRating(0);
+    setFeedbackText('');
+    setSubmitted(false);
+  };
   
   const toggleGroup = (groupLabel) => {
     setExpandedGroups(prev =>
@@ -228,12 +260,96 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }) {
         <Button
           variant="ghost"
           className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+          onClick={() => setShowFeedback(true)}
+        >
+          <MessageSquare className="w-4 h-4" />
+          Submit Feedback
+        </Button>
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
           onClick={onLogout}
         >
           <LogOut className="w-4 h-4" />
           Logout
         </Button>
       </div>
+
+      {/* Feedback Modal */}
+      {showFeedback && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          onClick={closeFeedback}
+        >
+          <div
+            className="bg-background rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6"
+            onClick={e => e.stopPropagation()}
+          >
+            {submitted ? (
+              <div className="text-center py-4">
+                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+                  <Star className="w-6 h-6 text-green-600" fill="currentColor" />
+                </div>
+                <h3 className="text-lg font-semibold mb-1">Thanks for your feedback!</h3>
+                <p className="text-sm text-muted-foreground mb-4">We appreciate you taking the time.</p>
+                <Button onClick={closeFeedback} className="w-full">Close</Button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Submit Feedback</h3>
+                  <button onClick={closeFeedback} className="text-muted-foreground hover:text-foreground">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Star Rating */}
+                <div className="mb-4">
+                  <p className="text-sm font-medium mb-2">How would you rate Brillu? <span className="text-destructive">*</span></p>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        onClick={() => setRating(star)}
+                        onMouseEnter={() => setHoveredRating(star)}
+                        onMouseLeave={() => setHoveredRating(0)}
+                        className="transition-transform hover:scale-110"
+                      >
+                        <Star
+                          className="w-8 h-8"
+                          style={{ color: star <= (hoveredRating || rating) ? '#FFD966' : '#e2e8f0' }}
+                          fill={star <= (hoveredRating || rating) ? '#FFD966' : '#e2e8f0'}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Feedback Text */}
+                <div className="mb-5">
+                  <p className="text-sm font-medium mb-2">Any comments? <span className="text-muted-foreground text-xs">(optional)</span></p>
+                  <textarea
+                    rows={3}
+                    value={feedbackText}
+                    onChange={e => setFeedbackText(e.target.value)}
+                    placeholder="Tell us what you think..."
+                    className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+
+                <Button
+                  onClick={handleFeedbackSubmit}
+                  disabled={!rating || submitting}
+                  className="w-full"
+                >
+                  {submitting ? 'Submitting...' : 'Submit'}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

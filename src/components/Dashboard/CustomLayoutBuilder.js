@@ -1016,6 +1016,19 @@ export default function CustomLayoutBuilder({ token }) {
     try {
       // Get MJML from editor, restore {{image:*}} patterns from css-class tracking
       let mjml = editorRef.current.getHtml();
+      // Fix grapesjs-mjml serialization bug: missing space between tag name and first attribute
+      // e.g. <mj-textfont-size="17px"> → <mj-text font-size="17px">
+      // Longer/multi-word tag names must come first to avoid partial matches
+      const mjmlTagNames = [
+        'mj-social-element', 'mj-accordion-element', 'mj-html-attributes',
+        'mj-text', 'mj-button', 'mj-image', 'mj-section', 'mj-column',
+        'mj-divider', 'mj-spacer', 'mj-social', 'mj-navbar', 'mj-hero',
+        'mj-all', 'mj-attributes', 'mj-font', 'mj-preview', 'mj-title',
+        'mj-raw', 'mj-head', 'mj-body', 'mj-breakpoint', 'mj-accordion',
+        'mj-table', 'mj-group', 'mj-wrapper', 'mj-carrier',
+      ];
+      const tagPattern = mjmlTagNames.join('|');
+      mjml = mjml.replace(new RegExp(`(<(?:${tagPattern}))([a-z])`, 'g'), '$1 $2');
       mjml = restoreImageSlots(mjml);
       mjml = restoreContentSlots(mjml);
 
@@ -1055,28 +1068,29 @@ export default function CustomLayoutBuilder({ token }) {
       return;
     }
 
-    // Soft warning if header/footer semantic sections are missing
-    const hasHeaderSection = mjml.includes('css-class="header-section"');
-    const hasFooterSection = mjml.includes('css-class="footer-section"');
-    if (!hasHeaderSection || !hasFooterSection) {
-      const missing = [
-        !hasHeaderSection && 'Header (css-class="header-section")',
-        !hasFooterSection && 'Footer (css-class="footer-section")'
-      ].filter(Boolean).join(' and ');
-      alert(
-        `Note: Your layout doesn't include a ${missing} section block. ` +
-        `Logo, navigation, and footer content will be automatically injected into the first/last section. ` +
-        `Header/footer brand colors will also be applied to those sections.`
-      );
-    }
 
     try {
       setSaving(true);
+
+      // Generate thumbnail by compiling MJML to HTML via preview endpoint
+      let thumbnail = null;
+      try {
+        const previewRes = await axios.post(
+          `${API}/api/layouts/preview-html`,
+          { mjml },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        thumbnail = previewRes.data.html || null;
+      } catch (e) {
+        // thumbnail is non-critical, proceed without it
+        console.warn('Thumbnail generation failed:', e);
+      }
 
       // Backend auto-extracts slots from MJML — only send name + template
       const payload = {
         name: layoutName,
         mjmlTemplate: mjml,
+        ...(thumbnail && { thumbnail }),
         ...(layoutCategory && { category: layoutCategory }),
         ...(Object.keys(productSelections).length > 0 && { productSelections }),
       };
@@ -1250,15 +1264,25 @@ export default function CustomLayoutBuilder({ token }) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {layouts.map((layout) => (
               <Card key={layout._id} className="overflow-hidden">
-                <div className="aspect-video bg-muted flex items-center justify-center">
+                <div className="bg-muted overflow-hidden relative" style={{ height: '180px' }}>
                   {layout.thumbnail ? (
-                    <img
-                      src={layout.thumbnail}
-                      alt={layout.name}
-                      className="w-full h-full object-cover"
+                    <iframe
+                      srcDoc={layout.thumbnail}
+                      title={layout.name}
+                      className="border-0 pointer-events-none absolute top-0 left-0"
+                      style={{
+                        width: '600px',
+                        height: '800px',
+                        transform: 'scale(0.5)',
+                        transformOrigin: 'top left',
+                      }}
+                      sandbox="allow-same-origin"
+                      scrolling="no"
                     />
                   ) : (
-                    <Layout className="w-12 h-12 text-muted-foreground" />
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Layout className="w-12 h-12 text-muted-foreground" />
+                    </div>
                   )}
                 </div>
                 <CardContent className="p-4">
