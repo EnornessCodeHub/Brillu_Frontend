@@ -280,6 +280,45 @@ const editorStyles = `
   }
 `;
 
+function LayoutThumbnail({ thumbnail, name }) {
+  const containerRef = useRef(null);
+  const [scale, setScale] = useState(0.5);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      setScale(containerRef.current.offsetWidth / 600);
+    }
+  }, []);
+
+  return (
+    <div ref={containerRef} className="bg-muted overflow-hidden relative" style={{ height: '180px' }}>
+      {thumbnail ? (
+        <iframe
+          srcDoc={thumbnail}
+          title={name}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '600px',
+            height: `${Math.ceil(180 / scale)}px`,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            border: 'none',
+            pointerEvents: 'none',
+          }}
+          scrolling="no"
+          sandbox="allow-same-origin"
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center">
+          <Layout className="w-12 h-12 text-muted-foreground" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CustomLayoutBuilder({ token }) {
   const editorRef = useRef(null);
   const editorContainerRef = useRef(null);
@@ -1264,27 +1303,7 @@ export default function CustomLayoutBuilder({ token }) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {layouts.map((layout) => (
               <Card key={layout._id} className="overflow-hidden">
-                <div className="bg-muted overflow-hidden relative" style={{ height: '180px' }}>
-                  {layout.thumbnail ? (
-                    <iframe
-                      srcDoc={layout.thumbnail}
-                      title={layout.name}
-                      className="border-0 pointer-events-none absolute top-0 left-0"
-                      style={{
-                        width: '600px',
-                        height: '800px',
-                        transform: 'scale(0.5)',
-                        transformOrigin: 'top left',
-                      }}
-                      sandbox="allow-same-origin"
-                      scrolling="no"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Layout className="w-12 h-12 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
+                <LayoutThumbnail thumbnail={layout.thumbnail} name={layout.name} />
                 <CardContent className="p-4">
                   <h3 className="font-medium truncate">{layout.name || 'Untitled Layout'}</h3>
                   <p className="text-sm text-muted-foreground mt-1">
