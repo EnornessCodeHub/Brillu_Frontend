@@ -362,24 +362,25 @@ export function BrandIdentity({ token }) {
             </span>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div className="flex gap-2">
           <input
             type="text"
             value={valuePropositionInput}
             onChange={(e) => setValuePropositionInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && addArrayItem('value_proposition', valuePropositionInput, setValuePropositionInput)}
             placeholder="e.g., Save time, Reduce costs"
+            style={{ flex: 1, minWidth: 0 }}
           />
-          <button className="btn btn-secondary" onClick={() => addArrayItem('value_proposition', valuePropositionInput, setValuePropositionInput)}>Add</button>
+          <button className="btn btn-secondary flex-shrink-0" onClick={() => addArrayItem('value_proposition', valuePropositionInput, setValuePropositionInput)}>Add</button>
         </div>
       </div>
 
       <div className="form-group">
         <label>Tone of Voice Sliders</label>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
+        <div className="flex flex-col gap-3 mt-2">
           {Object.entries(brandData.brandIdentity.tone_of_voice_sliders || {}).map(([name, value]) => (
-            <div key={name} style={{ background: '#f9fafb', padding: '12px', borderRadius: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <div key={name} className="bg-gray-50 p-3 rounded-lg">
+              <div className="flex justify-between mb-2">
                 <span style={{ fontWeight: '500', fontSize: '14px' }}>{name}</span>
                 {!['Formality', 'Energy', 'Warmth', 'Technical'].includes(name) && (
                   <button onClick={() => removeSlider(name)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>
@@ -387,7 +388,7 @@ export function BrandIdentity({ token }) {
                   </button>
                 )}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="flex items-center gap-2">
                 <span style={{ fontSize: '12px', color: '#9ca3af' }}>1</span>
                 <input
                   type="range"
@@ -428,15 +429,16 @@ export function BrandIdentity({ token }) {
             </span>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div className="flex gap-2">
           <input
             type="text"
             value={valuesInput}
             onChange={(e) => setValuesInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && addArrayItem('brand_values', valuesInput, setValuesInput)}
             placeholder="e.g., Innovation, Quality"
+            style={{ flex: 1, minWidth: 0 }}
           />
-          <button className="btn btn-secondary" onClick={() => addArrayItem('brand_values', valuesInput, setValuesInput)}>Add</button>
+          <button className="btn btn-secondary flex-shrink-0" onClick={() => addArrayItem('brand_values', valuesInput, setValuesInput)}>Add</button>
         </div>
       </div>
 
@@ -450,15 +452,16 @@ export function BrandIdentity({ token }) {
             </span>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div className="flex gap-2">
           <input
             type="text"
             value={negativeKeywordInput}
             onChange={(e) => setNegativeKeywordInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && addArrayItem('negative_keywords', negativeKeywordInput, setNegativeKeywordInput)}
             placeholder="e.g., cheap, limited time, hurry"
+            style={{ flex: 1, minWidth: 0 }}
           />
-          <button className="btn btn-secondary" onClick={() => addArrayItem('negative_keywords', negativeKeywordInput, setNegativeKeywordInput)}>Add</button>
+          <button className="btn btn-secondary flex-shrink-0" onClick={() => addArrayItem('negative_keywords', negativeKeywordInput, setNegativeKeywordInput)}>Add</button>
         </div>
       </div>
 
@@ -484,7 +487,7 @@ export function BrandIdentity({ token }) {
 
       <div className="form-group">
         <label>Email Colors</label>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginTop: '8px' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
           {Object.entries(brandData.brandIdentity.email_colors || {}).map(([key, value]) => (
             <div key={key}>
               <label style={{ fontSize: '13px', marginBottom: '4px', display: 'block', textTransform: 'capitalize' }}>
@@ -693,15 +696,16 @@ export function VisualDesignSettings({ token }) {
             </span>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div className="flex gap-2">
           <input
             type="text"
             value={keywordInput}
             onChange={(e) => setKeywordInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && addKeyword()}
             placeholder="e.g., minimal, bold"
+            style={{ flex: 1, minWidth: 0 }}
           />
-          <button className="btn btn-secondary" onClick={addKeyword}>Add</button>
+          <button className="btn btn-secondary flex-shrink-0" onClick={addKeyword}>Add</button>
         </div>
       </div>
 

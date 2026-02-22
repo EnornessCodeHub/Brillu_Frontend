@@ -222,37 +222,11 @@ export default function EnhancedOnboarding({ token, onComplete, onBackToLanding 
       {/* Back Button - Top Left */}
       <button
         onClick={handleBackToLanding}
-        className="back-to-landing-btn"
-        style={{
-          position: 'fixed',
-          top: '20px',
-          left: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '10px 16px',
-          backgroundColor: '#ffffff',
-          border: '1px solid #e5e7eb',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          fontSize: '14px',
-          fontWeight: '500',
-          color: '#374151',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-          transition: 'all 0.2s',
-          zIndex: 1000
-        }}
-        onMouseEnter={(e) => {
-          e.target.style.backgroundColor = '#f9fafb';
-          e.target.style.borderColor = '#d1d5db';
-        }}
-        onMouseLeave={(e) => {
-          e.target.style.backgroundColor = '#ffffff';
-          e.target.style.borderColor = '#e5e7eb';
-        }}
+        className="fixed top-3 left-3 sm:top-5 sm:left-5 z-50 flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 bg-white border border-gray-200 rounded-lg cursor-pointer text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:border-gray-300 transition-colors min-h-[44px]"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back to Sign in
+        <span className="hidden sm:inline">Back to Sign in</span>
+        <span className="sm:hidden">Back</span>
       </button>
 
       <div className="wizard-container">
@@ -846,6 +820,30 @@ export default function EnhancedOnboarding({ token, onComplete, onBackToLanding 
           margin: 0;
           font-size: 14px;
           color: #4b5563;
+        }
+        .wizard-navigation {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding-top: 24px;
+          border-top: 1px solid #e5e7eb;
+          margin-top: 24px;
+        }
+        @media (max-width: 480px) {
+          .color-grid {
+            grid-template-columns: 1fr;
+          }
+          .summary-grid {
+            grid-template-columns: 1fr;
+          }
+          .wizard-navigation {
+            flex-direction: column;
+            gap: 8px;
+          }
+          .wizard-navigation .btn {
+            width: 100%;
+          }
         }
       `}</style>
     </div>

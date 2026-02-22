@@ -330,6 +330,7 @@ export default function CustomLayoutBuilder({ token }) {
   const [editorReady, setEditorReady] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list', 'editor', or 'templateChooser'
   const [activeTab, setActiveTab] = useState('blocks'); // 'blocks' or 'settings'
+  const [showEditorSidebar, setShowEditorSidebar] = useState(true);
   const [layoutCategory, setLayoutCategory] = useState('');
   const [customCategoryName, setCustomCategoryName] = useState(''); // ← NAYA STATE
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -1268,15 +1269,15 @@ export default function CustomLayoutBuilder({ token }) {
   // List view
   if (viewMode === 'list') {
     return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Custom Layout Builder</h1>
+            <h1 className="text-xl md:text-2xl font-bold">Custom Layout Builder</h1>
             <p className="text-muted-foreground mt-1">
               Create custom email layouts that skip AI design generation
             </p>
           </div>
-          <Button onClick={handleCreate} className="gap-2">
+          <Button onClick={handleCreate} className="gap-2 flex-shrink-0">
             <Plus className="w-4 h-4" />
             Create Layout
           </Button>
@@ -1437,9 +1438,10 @@ export default function CustomLayoutBuilder({ token }) {
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Toolbar */}
-      <div className="flex items-center justify-between p-4 border-b bg-background" style={{ flexShrink: 0 }}>
-        <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={handleCancel}>
+      <div className="flex flex-col gap-2 p-3 border-b bg-background" style={{ flexShrink: 0 }}>
+        {/* Row 1: Cancel + name + category */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleCancel}>
             Cancel
           </Button>
           <input
@@ -1447,7 +1449,7 @@ export default function CustomLayoutBuilder({ token }) {
             value={layoutName}
             onChange={(e) => setLayoutName(e.target.value)}
             placeholder="Layout name..."
-            className="px-3 py-2 border rounded-md w-64"
+            className="px-3 py-2 border rounded-md flex-1 min-w-[140px] text-sm"
           />
           <select
             value={layoutCategory === 'custom' || (layoutCategory && !['promo', 'newsletter', 'welcome', 'activation', 'reengagement'].includes(layoutCategory)) ? 'custom' : layoutCategory}
@@ -1462,7 +1464,7 @@ export default function CustomLayoutBuilder({ token }) {
                 setCustomCategoryName(''); // Clear custom input
               }
             }}
-            className="px-3 py-2 border rounded-md"
+            className="px-3 py-2 border rounded-md text-sm"
           >
             <option value="">No Category</option>
             <option value="promo">Promotional</option>
@@ -1483,14 +1485,15 @@ export default function CustomLayoutBuilder({ token }) {
                 const normalizedValue = displayValue.trim().toLowerCase().replace(/\s+/g, '-');
                 setLayoutCategory(normalizedValue || '');
               }}
-              placeholder="Enter category name..."
-              className="px-3 py-2 border rounded-md w-64"
+              placeholder="Category name..."
+              className="px-3 py-2 border rounded-md flex-1 min-w-[140px] text-sm"
               autoFocus
             />
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handlePreview} disabled={!editorReady || previewLoading} className="gap-2">
+        {/* Row 2: Action buttons */}
+        <div className="flex items-center gap-2 justify-end">
+          <Button variant="outline" size="sm" onClick={handlePreview} disabled={!editorReady || previewLoading} className="gap-2">
             {previewLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
@@ -1498,7 +1501,7 @@ export default function CustomLayoutBuilder({ token }) {
             )}
             Preview
           </Button>
-          <Button onClick={handleSave} disabled={saving || !editorReady} className="gap-2">
+          <Button size="sm" onClick={handleSave} disabled={saving || !editorReady} className="gap-2">
             {saving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
@@ -1510,14 +1513,23 @@ export default function CustomLayoutBuilder({ token }) {
       </div>
 
       {/* Editor container with sidebar */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
+        {/* Mobile sidebar toggle */}
+        <button
+          className="md:hidden absolute top-2 left-2 z-10 p-1.5 bg-background border border-border rounded shadow-sm text-xs"
+          onClick={() => setShowEditorSidebar(prev => !prev)}
+        >
+          {showEditorSidebar ? 'Hide Blocks' : 'Blocks'}
+        </button>
+
         {/* Left Sidebar - Blocks Panel */}
         <div
           className="editor-sidebar"
           style={{
-            width: '240px',
+            width: showEditorSidebar ? '240px' : '0px',
+            transition: 'width 0.2s ease',
             backgroundColor: '#ffffff',
-            borderRight: '1px solid #e0e0e0',
+            borderRight: showEditorSidebar ? '1px solid #e0e0e0' : 'none',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden'
@@ -1616,7 +1628,7 @@ export default function CustomLayoutBuilder({ token }) {
           <div
             style={{
               backgroundColor: '#fff', borderRadius: 8,
-              width: '680px', maxHeight: '90vh',
+              width: 'min(680px, calc(100vw - 32px))', maxHeight: '90vh',
               display: 'flex', flexDirection: 'column',
               boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
             }}

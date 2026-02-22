@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import axios from 'axios';
 import API from '../../config/api.config';
 
-export default function Sidebar({ activeSection, onSectionChange, onLogout }) {
+export default function Sidebar({ activeSection, onSectionChange, onLogout, isOpen, onClose }) {
   const menuItems = [
     { id: 'home', icon: Sparkles, label: 'Generate Email' },
     { id: 'campaigns', icon: Mail, label: 'My Campaigns' },
@@ -107,7 +107,24 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }) {
   };
 
   return (
-    <div className="flex flex-col h-screen w-64 bg-card border-r border-border">
+    <>
+      {/* Mobile backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+      <div
+        className={`
+          fixed inset-y-0 left-0 z-50 flex flex-col h-screen w-64
+          bg-card border-r border-border
+          transform transition-transform duration-300 ease-in-out
+          md:relative md:translate-x-0 md:z-auto md:flex-shrink-0
+          ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}
+      >
       {/* Logo/Header */}
       <div className="flex items-center gap-2 p-6 border-b border-border">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-spark to-spark-hover flex items-center justify-center">
@@ -187,7 +204,7 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }) {
                                         ? 'bg-primary/10 text-primary font-medium'
                                         : 'text-muted-foreground hover:text-foreground hover:bg-accent/5'
                                       }`}
-                                    onClick={() => onSectionChange(subitem.id)}
+                                    onClick={() => { onSectionChange(subitem.id); if (onClose) onClose(); }}
                                   >
                                     {subitem.label}
                                   </button>
@@ -229,7 +246,7 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }) {
                               ? 'bg-primary/10 text-primary font-medium'
                               : 'text-muted-foreground hover:text-foreground hover:bg-accent/5'
                             }`}
-                          onClick={() => onSectionChange(subitem.id)}
+                          onClick={() => { onSectionChange(subitem.id); if (onClose) onClose(); }}
                         >
                           {subitem.label}
                         </button>
@@ -244,7 +261,7 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }) {
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground hover:text-foreground hover:bg-accent/5'
                     }`}
-                  onClick={() => onSectionChange(item.id)}
+                  onClick={() => { onSectionChange(item.id); if (onClose) onClose(); }}
                 >
                   <Icon className="w-4 h-4" />
                   <span>{item.label}</span>
@@ -275,7 +292,7 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }) {
         </Button>
       </div>
 
-      {/* Feedback Modal */}
+      {/* Feedback Modal — rendered outside the sidebar div so it covers full screen */}
       {showFeedback && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
@@ -351,5 +368,6 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }) {
         </div>
       )}
     </div>
+    </>
   );
 }
