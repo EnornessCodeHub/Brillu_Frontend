@@ -89,11 +89,11 @@ export default function Hero({ onGetStarted, isAuthenticated, onSignUpRequired, 
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-6 py-20 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-12 sm:py-20 overflow-hidden">
       {/* Background gradients */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-100 via-transparent to-gray-50" />
-      <div className="absolute top-20 right-20 w-96 h-96 bg-gray-200 rounded-full blur-3xl animate-pulse-slow" />
-      <div className="absolute bottom-20 left-20 w-96 h-96 bg-gray-100 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-10 right-10 sm:top-20 sm:right-20 w-48 sm:w-96 h-48 sm:h-96 bg-gray-200 rounded-full blur-3xl animate-pulse-slow" />
+      <div className="absolute bottom-10 left-10 sm:bottom-20 sm:left-20 w-48 sm:w-96 h-48 sm:h-96 bg-gray-100 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }} />
       
       <div className="w-full max-w-7xl mx-auto relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -108,7 +108,7 @@ export default function Hero({ onGetStarted, isAuthenticated, onSignUpRequired, 
             </div>
 
             {/* Main heading */}
-            <h1 className="text-5xl lg:text-7xl font-bold tracking-tight leading-tight">
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight leading-tight">
               Generate brilliant emails{" "}
               <span className="bg-gradient-to-r from-spark via-spark-hover to-spark-active bg-clip-text text-transparent">
                 in seconds
@@ -142,7 +142,7 @@ export default function Hero({ onGetStarted, isAuthenticated, onSignUpRequired, 
             </div>
 
             {/* Stats */}
-            <div className="flex items-center gap-8 pt-4">
+            <div className="flex flex-wrap items-center gap-4 sm:gap-8 pt-4">
               <div className="p-4 rounded-xl bg-card/50 backdrop-blur-sm border border-border">
                 <div className="text-3xl font-bold bg-gradient-to-r from-spark to-spark-hover bg-clip-text text-transparent">10,000+</div>
                 <div className="text-sm text-muted-foreground">Emails Created</div>
@@ -155,7 +155,7 @@ export default function Hero({ onGetStarted, isAuthenticated, onSignUpRequired, 
           </div>
 
           {/* Right column - Animated prompt showcase */}
-          <div className="relative h-[500px] lg:h-[600px]">
+          <div className="relative h-[300px] sm:h-[400px] lg:h-[600px]">
             {/* Animated background blurs */}
             <div className="absolute -inset-8 bg-gradient-to-r from-gray-300 to-gray-200 rounded-3xl blur-3xl animate-pulse" />
 

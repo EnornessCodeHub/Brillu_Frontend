@@ -23,6 +23,7 @@ import API from '../../config/api.config';
 
 export default function DashboardLayout({ token, onLogout, welcomeCampaignId, onWelcomeCampaignHandled }) {
   const [activeSection, setActiveSection] = useState('home');
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [campaigns, setCampaigns] = useState([]);
   const [loadingCampaigns, setLoadingCampaigns] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -186,26 +187,41 @@ export default function DashboardLayout({ token, onLogout, welcomeCampaignId, on
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background overflow-hidden">
       {/* Sidebar */}
       <Sidebar
         activeSection={activeSection}
         onSectionChange={setActiveSection}
         onLogout={onLogout}
+        isOpen={mobileSidebarOpen}
+        onClose={() => setMobileSidebarOpen(false)}
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Header */}
         <div className="border-b border-border bg-card/50 backdrop-blur-sm">
-          <div className="px-8 py-6">
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Manage your email campaigns and preferences</p>
+          <div className="px-4 md:px-8 py-4 md:py-6 flex items-center gap-4">
+            <button
+              className="md:hidden p-2 min-w-[44px] min-h-[44px] rounded-lg hover:bg-accent/10 transition-colors flex-shrink-0 flex items-center justify-center"
+              onClick={() => setMobileSidebarOpen(true)}
+              aria-label="Open navigation"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div>
+              <h1 className="text-xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
+              <p className="text-muted-foreground mt-1 text-sm md:text-base hidden sm:block">
+                Manage your email campaigns and preferences
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8">
           {/* Campaigns - Generated Emails */}
           {activeSection === 'campaigns' && (
             <CampaignsSection

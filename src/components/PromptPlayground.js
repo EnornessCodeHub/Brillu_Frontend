@@ -919,7 +919,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
           {/* Layout Selector Modal */}
           {showLayoutSelector && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowLayoutSelector(false)}>
-              <div className="bg-background rounded-xl shadow-xl w-full max-w-3xl max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+              <div className="bg-background rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] sm:max-h-[80vh] flex flex-col mx-2 sm:mx-0" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between p-5 border-b">
                   <div>
                     <h3 className="text-lg font-semibold">Select a Template</h3>
@@ -935,7 +935,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
                       No templates available. Create one in the Layout Builder.
                     </p>
                   ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                       {customLayouts.map((layout) => (
                         <div
                           key={layout._id}
@@ -1000,9 +1000,9 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
                 {getSelectedLayout().imageSlots.map(slot => {
                   const slotId = typeof slot === 'string' ? slot : slot.slotId;
                   return (
-                  <div key={slotId} className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30">
-                    <span className="text-sm font-medium min-w-[120px] capitalize">{slotId.replace(/-/g, ' ')}</span>
-                    <div className="flex gap-2 flex-1">
+                  <div key={slotId} className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 border rounded-lg bg-muted/30">
+                    <span className="text-sm font-medium sm:min-w-[120px] capitalize">{slotId.replace(/-/g, ' ')}</span>
+                    <div className="flex gap-2 flex-wrap">
                       {['ai', 'media', 'skip'].map(source => (
                         <button
                           key={source}
@@ -1049,7 +1049,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
                   <h3 className="font-semibold">Select Image for "{showMediaPicker.replace(/-/g, ' ')}"</h3>
                   <button onClick={() => setShowMediaPicker(null)}><X className="w-5 h-5" /></button>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {mediaAssets
                     .filter(a => a.type === 'image')
                     .map(asset => (
@@ -1166,7 +1166,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
                 </div>
 
                 {/* Stage Indicators (4 steps: Brief, Template, Content, Final) */}
-                <div className="grid grid-cols-4 gap-2 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                   <div className={`text-center p-2 rounded ${['CREATED', 'BRIEF_ENRICHED', 'BRIEF_VALIDATED'].includes(currentState) ? 'bg-primary/10 text-primary font-medium' : campaignProgress > 20 ? 'text-green-600' : 'text-muted-foreground'}`}>
                     Brief
                   </div>
@@ -1270,7 +1270,8 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
               <iframe
                 title="Email Preview"
                 srcDoc={processImageUrls(htmlPreview, API)}
-                className="w-full h-[600px]"
+                className="w-full h-[400px] sm:h-[600px]"
+                style={{ minWidth: '320px' }}
                 sandbox="allow-same-origin"
               />
             </div>
@@ -1434,7 +1435,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
       {/* Template Change Modal (Escape Hatch) */}
       {showTemplateChangeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-background rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="bg-background rounded-lg shadow-xl max-w-3xl w-full mx-2 sm:mx-4 max-h-[90vh] sm:max-h-[80vh] overflow-hidden flex flex-col">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b">
               <div>

@@ -12,6 +12,7 @@ export default function LandingPage({ onLogin, isAuthenticated: authProp, onNavi
   const [isAuthenticated, setIsAuthenticated] = useState(authProp || false);
   const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('signup'); // 'signup' or 'login'
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setIsAuthenticated(authProp || !!token);
@@ -102,8 +103,47 @@ export default function LandingPage({ onLogin, isAuthenticated: authProp, onNavi
                 </div>
               )}
             </div>
+
+            {/* Mobile hamburger */}
+            <button
+              className="md:hidden p-2 min-w-[44px] min-h-[44px] rounded-lg hover:bg-accent/10 transition-colors flex items-center justify-center"
+              onClick={() => setMobileMenuOpen(prev => !prev)}
+              aria-label="Toggle navigation"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+              </svg>
+            </button>
           </div>
         </div>
+
+        {/* Mobile menu panel */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-background border-t border-border shadow-lg">
+            <div className="container mx-auto px-6 py-4 flex flex-col gap-3">
+              <a href="#features" className="text-sm font-medium py-2 border-b border-border hover:text-primary transition-colors"
+                 onClick={() => setMobileMenuOpen(false)}>Features</a>
+              <a href="#pricing" className="text-sm font-medium py-2 border-b border-border hover:text-primary transition-colors"
+                 onClick={() => setMobileMenuOpen(false)}>Pricing</a>
+              {isAuthenticated ? (
+                <div className="flex flex-col gap-2 pt-2">
+                  <Button variant="ghost" className="justify-start"
+                    onClick={() => { handleDashboardClick(); setMobileMenuOpen(false); }}>Dashboard</Button>
+                  <Button variant="outline" className="justify-start"
+                    onClick={() => { handleLogout(); setMobileMenuOpen(false); }}>Logout</Button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 pt-2">
+                  <Button variant="ghost" className="justify-start"
+                    onClick={() => { setAuthModalMode('login'); setShowSignUpModal(true); setMobileMenuOpen(false); }}>Sign In</Button>
+                  <Button className="justify-start"
+                    onClick={() => { setAuthModalMode('signup'); setShowSignUpModal(true); setMobileMenuOpen(false); }}>Sign Up</Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Add padding-top to account for fixed navbar */}
