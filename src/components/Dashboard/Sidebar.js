@@ -292,10 +292,12 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout, isOp
         </Button>
       </div>
 
-      {/* Feedback Modal — rendered outside the sidebar div so it covers full screen */}
+    </div>
+
+      {/* Feedback Modal — outside the sidebar div to avoid transform containment */}
       {showFeedback && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
+          className="fixed inset-0 z-[100] flex items-center justify-center"
           style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
           onClick={closeFeedback}
         >
@@ -367,7 +369,6 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout, isOp
           </div>
         </div>
       )}
-    </div>
     </>
   );
 }
