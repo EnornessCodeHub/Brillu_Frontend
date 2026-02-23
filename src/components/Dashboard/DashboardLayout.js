@@ -1774,6 +1774,41 @@ function TemplatesSection({ token, onNavigateToHome, selectedTemplate, onSelectT
 
 // Settings Section
 function SettingsSection({ token }) {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState('');
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPwError('');
+    setPwSuccess('');
+
+    if (newPassword !== confirmPassword) {
+      setPwError('New passwords do not match.');
+      return;
+    }
+
+    setPwLoading(true);
+    try {
+      await axios.put(
+        `${API}/api/auth/change-password`,
+        { currentPassword, newPassword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setPwSuccess('Password changed successfully.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setPwError(err?.response?.data?.error || 'Failed to change password. Please try again.');
+    } finally {
+      setPwLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -1794,44 +1829,62 @@ function SettingsSection({ token }) {
               </div>
               <div className="flex-1">
                 <CardTitle className="text-base">Account</CardTitle>
-                <CardDescription>Manage your account details and password</CardDescription>
+                <CardDescription>Manage your password</CardDescription>
               </div>
             </div>
           </CardHeader>
-        </Card>
+          <CardContent>
+            <form onSubmit={handleChangePassword} className="space-y-4 max-w-sm">
+              <p className="text-sm font-medium">Change Password</p>
 
-        {/* Plan & Billing */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
-                <LayoutTemplate className="w-5 h-5 text-amber-600" />
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Current Password</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={e => setCurrentPassword(e.target.value)}
+                  required
+                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="Enter current password"
+                />
               </div>
-              <div className="flex-1">
-                <CardTitle className="text-base">Plan & Billing</CardTitle>
-                <CardDescription>Current Plan: <strong>Free</strong></CardDescription>
+
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  required
+                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="Min. 8 characters"
+                />
               </div>
-              <Button size="sm">
-                Upgrade Plan
+
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Confirm New Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  required
+                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="Repeat new password"
+                />
+              </div>
+
+              {pwError && <p className="text-xs text-destructive">{pwError}</p>}
+              {pwSuccess && <p className="text-xs text-green-600">{pwSuccess}</p>}
+
+              <Button type="submit" size="sm" disabled={pwLoading}>
+                {pwLoading ? 'Updating...' : 'Update Password'}
               </Button>
-            </div>
-          </CardHeader>
+            </form>
+          </CardContent>
         </Card>
 
-        {/* API Keys */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                <Settings className="w-5 h-5 text-green-600" />
-              </div>
-              <div className="flex-1">
-                <CardTitle className="text-base">API Keys</CardTitle>
-                <CardDescription>Manage API keys for integrations</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
+        {/* Plan & Billing — hidden until implemented */}
+        {/* API Keys — hidden until implemented */}
       </div>
     </div>
   );
