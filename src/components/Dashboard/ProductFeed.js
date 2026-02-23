@@ -4,7 +4,7 @@ import { Package, DollarSign, Tag, Link, Image, CheckCircle, XCircle, ImagePlus 
 
 import API from '../../config/api.config';
 
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'PKR'];
+const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'PKR', 'SAR'];
 
 export default function ProductFeed({ token }) {
   const [products, setProducts] = useState([]);
@@ -322,7 +322,7 @@ export default function ProductFeed({ token }) {
           products.map((product, index) => {
             const imageUrl = product.image_url || product.image;
             const productId = product._id || product.productId;
-            const currencySymbol = product.currency === 'EUR' ? '€' : product.currency === 'GBP' ? '£' : '$';
+            const currencySymbol = product.currency === 'EUR' ? '€' : product.currency === 'GBP' ? '£' : product.currency === 'SAR' ? '﷼' : '$';
             
             return (
               <div key={productId || index} className="product-card">

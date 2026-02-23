@@ -50,15 +50,13 @@ export default function MediaLibrary({ token }) {
 
     try {
       const response = await axios.post(`${API}/api/media/upload`, formData, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
+        headers: {
+          Authorization: `Bearer ${token}`
         }
       });
       console.log('Upload response:', response.data);
       alert('Asset uploaded successfully!');
       loadAssets();
-      e.target.value = ''; // Reset file input
     } catch (error) {
       console.error('Upload error:', error);
       console.error('Error response:', error.response?.data);
@@ -66,6 +64,7 @@ export default function MediaLibrary({ token }) {
       alert(`Upload failed: ${errorMsg}`);
     } finally {
       setUploading(false);
+      e.target.value = ''; // Reset file input
     }
   };
 

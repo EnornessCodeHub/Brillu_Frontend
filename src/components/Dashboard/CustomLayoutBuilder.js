@@ -452,14 +452,6 @@ export default function CustomLayoutBuilder({ token }) {
     // ============================================
     // 1. SECTIONS — Pre-filled combo blocks (drag one, get a complete section)
     // ============================================
-    blockManager.add('combo-header', {
-      label: 'Header',
-      category: 'Sections',
-      media: svgIcon('<rect x="3" y="10" width="26" height="12" rx="2"/><rect x="8" y="13" width="16" height="6" rx="1" fill="#ccc" stroke="none"/>'),
-      content: `<mj-section css-class="header-section" padding="15px 0px"><mj-column padding="12px"><mj-image src="${PLACEHOLDER_IMG}" alt="Logo" width="140px" padding="0px" css-class="img-slot--logo" /></mj-column></mj-section>`,
-      attributes: { class: 'gjs-block-full' }
-    });
-
     blockManager.add('combo-hero', {
       label: 'Hero Banner',
       category: 'Sections',
@@ -505,14 +497,6 @@ export default function CustomLayoutBuilder({ token }) {
       category: 'Sections',
       media: svgIcon('<rect x="3" y="8" width="26" height="16" rx="3" fill="none"/><text x="50%" y="55%" text-anchor="middle" dominant-baseline="middle" fill="#666" stroke="none" font-size="10" font-weight="bold">%OFF</text>'),
       content: `<mj-section css-class="offer-banner-section" padding="10px 25px"><mj-column padding="0px"><mj-text font-size="28px" font-weight="bold" align="center" padding="16px" background-color="#FEF3C7" color="#92400E" css-class="content-slot--offer-text">SPECIAL OFFER</mj-text></mj-column></mj-section>`,
-      attributes: { class: 'gjs-block-full' }
-    });
-
-    blockManager.add('combo-footer', {
-      label: 'Footer',
-      category: 'Sections',
-      media: svgIcon('<rect x="3" y="14" width="26" height="12" rx="2"/><circle cx="10" cy="18" r="2"/><circle cx="16" cy="18" r="2"/><circle cx="22" cy="18" r="2"/><line x1="8" y1="23" x2="24" y2="23"/>'),
-      content: `<mj-section css-class="footer-section" padding="15px 0px"><mj-column padding="12px">{{social:icons}}<mj-text font-size="12px" color="#9CA3AF" align="center" padding="10px 25px" css-class="content-slot--footer">Footer content from your settings</mj-text></mj-column></mj-section>`,
       attributes: { class: 'gjs-block-full' }
     });
 
@@ -631,8 +615,8 @@ export default function CustomLayoutBuilder({ token }) {
 
     // Structure blocks that go into body
     const structureBlockIds = [
-      'combo-header', 'combo-hero', 'combo-text', 'combo-cta',
-      'combo-image-text', 'combo-features', 'combo-offer', 'combo-footer',
+      'combo-hero', 'combo-text', 'combo-cta',
+      'combo-image-text', 'combo-features', 'combo-offer',
       'combo-2col', 'combo-3col',
       'product-grid-2', 'product-grid-3', 'product-spotlight'
     ];
