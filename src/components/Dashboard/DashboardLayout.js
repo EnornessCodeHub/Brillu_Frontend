@@ -4,7 +4,7 @@ import grapesjs from 'grapesjs';
 import 'grapesjs/dist/css/grapes.min.css';
 import '../../grapesjs-custom-theme.css'; // SendWithSES-inspired theme (fixed path)
 import 'grapesjs-preset-newsletter';
-import { Mail, RefreshCw, ArrowLeft, Eye, Edit3, Copy, Download, Loader2, Calendar, MessageSquare, LayoutTemplate, Settings, CheckCircle, X, Sparkles, ImageIcon } from 'lucide-react';
+import { Mail, RefreshCw, ArrowLeft, Eye, Edit3, Copy, Download, Loader2, Calendar, MessageSquare, LayoutTemplate, Settings, CheckCircle, X, Sparkles, ImageIcon, Trash2 } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { BrandIdentity, VisualDesignSettings, WritingStyle, SocialMedia } from './BrandSettings';
 import { HeaderSettings, FooterEditor } from './EmailSettings';
@@ -552,6 +552,24 @@ function CampaignsSection({ token, campaigns, loading, onRefresh, campaignToEdit
   const [productPickerMaxProducts, setProductPickerMaxProducts] = useState(2);
   const [productSelections, setProductSelections] = useState({});
   const processedCampaignRef = useRef(null); // Track which campaign we've already opened
+  const [deletingCampaignId, setDeletingCampaignId] = useState(null);
+
+  const handleDeleteCampaign = async (e, campaignId) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this campaign? This cannot be undone.')) return;
+    setDeletingCampaignId(campaignId);
+    try {
+      await axios.delete(`${API}/api/campaigns/${campaignId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (selectedCampaign?._id === campaignId) setSelectedCampaign(null);
+      onRefresh();
+    } catch (err) {
+      alert(err?.response?.data?.message || 'Failed to delete campaign. Please try again.');
+    } finally {
+      setDeletingCampaignId(null);
+    }
+  };
 
   // Load full campaign data including HTML and MJML
   const loadFullCampaignData = async (campaignId, openInEditor = false) => {
@@ -1740,10 +1758,22 @@ function CampaignsSection({ token, campaigns, loading, onRefresh, campaignToEdit
                   )}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button className="w-full" size="sm">
+              <CardContent className="flex gap-2">
+                <Button className="flex-1" size="sm">
                   <Eye className="w-4 h-4 mr-2" />
                   View & Edit
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={(e) => handleDeleteCampaign(e, campaign._id)}
+                  disabled={deletingCampaignId === campaign._id}
+                >
+                  {deletingCampaignId === campaign._id
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <Trash2 className="w-4 h-4" />
+                  }
                 </Button>
               </CardContent>
             </Card>
