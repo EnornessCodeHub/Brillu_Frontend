@@ -37,6 +37,7 @@ export function BrandIdentity({ token }) {
     }
   });
   const [uploading, setUploading] = useState(false);
+  const [uploadingHero, setUploadingHero] = useState(false);
   const [valuesInput, setValuesInput] = useState('');
   const [valuePropositionInput, setValuePropositionInput] = useState('');
   const [negativeKeywordInput, setNegativeKeywordInput] = useState('');
@@ -166,6 +167,48 @@ export function BrandIdentity({ token }) {
       alert(`Upload failed: ${errorMsg}`);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleHeroImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingHero(true);
+    const formData = new FormData();
+    formData.append('heroImage', file);
+    formData.append('brandIndex', selectedBrand);
+
+    try {
+      const response = await axios.post(`${API}/api/media/upload-hero-image`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const heroUrl = response.data.heroImageUrl || response.data.heroImage?.url || response.data.asset?.url;
+      const fullHeroUrl = heroUrl && !heroUrl.startsWith('http') ? `${API}${heroUrl}` : heroUrl;
+
+      if (fullHeroUrl) {
+        setBrands(prevBrands => {
+          const updatedBrands = [...prevBrands];
+          if (!updatedBrands[selectedBrand]) updatedBrands[selectedBrand] = {};
+          updatedBrands[selectedBrand].heroImage = {
+            url: fullHeroUrl,
+            width: response.data.heroImage?.width || 600,
+            height: response.data.heroImage?.height || 300
+          };
+          return updatedBrands;
+        });
+      }
+
+      alert('Hero image uploaded successfully!');
+      loadPreferences();
+      e.target.value = '';
+    } catch (error) {
+      console.error('Hero image upload error:', error);
+      const errorMsg = error.response?.data?.error || error.message || 'Failed to upload hero image';
+      alert(`Upload failed: ${errorMsg}`);
+    } finally {
+      setUploadingHero(false);
     }
   };
 
@@ -301,6 +344,48 @@ export function BrandIdentity({ token }) {
                 style={{ maxWidth: '200px', maxHeight: '200px', border: '1px solid #ddd', padding: '5px' }}
                 onError={(e) => { e.target.style.display = 'none'; }}
               />
+            </div>
+          );
+        })()}
+      </div>
+
+      <div className="form-group">
+        <label>Hero Image</label>
+        <p style={{ fontSize: '12px', color: '#666', marginTop: '2px', marginBottom: '6px' }}>
+          The main banner image shown at the top of your emails (optional)
+        </p>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleHeroImageUpload}
+          disabled={uploadingHero}
+        />
+        {uploadingHero && <p style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>Uploading...</p>}
+        {(() => {
+          const heroUrl = brands[selectedBrand]?.heroImage?.url;
+          if (!heroUrl) return null;
+          const fullHeroUrl = heroUrl && !heroUrl.startsWith('http') ? `${API}${heroUrl}` : heroUrl;
+          return (
+            <div style={{ marginTop: '10px' }}>
+              <img
+                src={fullHeroUrl}
+                alt="Hero Image"
+                style={{ maxWidth: '400px', maxHeight: '200px', border: '1px solid #ddd', padding: '5px', objectFit: 'cover' }}
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setBrands(prevBrands => {
+                    const updatedBrands = [...prevBrands];
+                    updatedBrands[selectedBrand].heroImage = null;
+                    return updatedBrands;
+                  });
+                }}
+                style={{ display: 'block', marginTop: '6px', fontSize: '12px', color: '#e53e3e', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                Remove hero image
+              </button>
             </div>
           );
         })()}

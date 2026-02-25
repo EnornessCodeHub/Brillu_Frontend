@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Package, DollarSign, Tag, Link, Image, CheckCircle, XCircle, ImagePlus } from 'lucide-react';
+import CurrencyList from 'currency-list';
 
 import API from '../../config/api.config';
 
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'PKR', 'SAR'];
+const CURRENCIES = Object.values(CurrencyList.getAll('en_US')).map(c => ({
+  code: c.code,
+  name: c.name,
+  symbol: c.symbol
+}));
 
 export default function ProductFeed({ token }) {
   const [products, setProducts] = useState([]);
@@ -167,7 +172,7 @@ export default function ProductFeed({ token }) {
                 value={newProduct.currency}
                 onChange={(e) => setNewProduct({...newProduct, currency: e.target.value})}
               >
-                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.name}</option>)}
               </select>
             </div>
           </div>
@@ -322,7 +327,7 @@ export default function ProductFeed({ token }) {
           products.map((product, index) => {
             const imageUrl = product.image_url || product.image;
             const productId = product._id || product.productId;
-            const currencySymbol = product.currency === 'EUR' ? '€' : product.currency === 'GBP' ? '£' : product.currency === 'SAR' ? '﷼' : '$';
+            const currencySymbol = CURRENCIES.find(c => c.code === product.currency)?.symbol || '$';
             
             return (
               <div key={productId || index} className="product-card">

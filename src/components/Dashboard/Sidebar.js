@@ -35,21 +35,17 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout, isOp
           ]
         },
         {
-          groupLabel: 'Media',
-          collapsible: true,
-          items: [
-            { id: 'media-library', label: 'Media Library' }
-          ]
+          groupLabel: 'Media Library',
+          collapsible: false,
+          navId: 'media-library',
+          items: []
+        },
+        {
+          groupLabel: 'Product Catalog',
+          collapsible: false,
+          navId: 'products',
+          items: []
         }
-      ]
-    },
-    {
-      id: 'data-sources',
-      icon: Database,
-      label: 'Data Sources',
-      submenu: [
-        { id: 'products', label: 'Product Catalog' }
-        // { id: 'crm', label: 'CRM Integration' } // Coming soon
       ]
     },
     { id: 'settings', icon: Settings, label: 'Settings' }
@@ -173,7 +169,7 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout, isOp
                         return (
                           <div key={groupIndex}>
                             {/* Group label (collapsible if enabled) */}
-                            {group.collapsible ? (
+                            {group.groupLabel && (group.collapsible ? (
                               <button
                                 className={`w-full flex items-center justify-between px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-colors ${
                                   isGroupExpanded || hasActiveItem
@@ -190,10 +186,23 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout, isOp
                                 )}
                               </button>
                             ) : (
-                              <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                {group.groupLabel}
-                              </div>
-                            )}
+                              group.navId ? (
+                                <button
+                                  className={`w-full flex items-center px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-colors ${
+                                    activeSection === group.navId
+                                      ? 'text-foreground'
+                                      : 'text-muted-foreground hover:text-foreground'
+                                  }`}
+                                  onClick={() => { onSectionChange(group.navId); if (onClose) onClose(); }}
+                                >
+                                  {group.groupLabel}
+                                </button>
+                              ) : (
+                                <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                  {group.groupLabel}
+                                </div>
+                              )
+                            ))}
                             {/* Group items (show if not collapsible or expanded) */}
                             {(!group.collapsible || isGroupExpanded) && (
                               <div className="ml-2 space-y-1">

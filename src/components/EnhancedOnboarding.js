@@ -28,6 +28,8 @@ export default function EnhancedOnboarding({ token, onComplete, onBackToLanding 
   const [brandName, setBrandName] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [heroImageUrl, setHeroImageUrl] = useState('');
+  const [uploadingHeroImage, setUploadingHeroImage] = useState(false);
   const [brandType, setBrandType] = useState('');
   const [targetAudience, setTargetAudience] = useState('');
   const [productServiceDescription, setProductServiceDescription] = useState('');
@@ -88,8 +90,9 @@ export default function EnhancedOnboarding({ token, onComplete, onBackToLanding 
           value_proposition: valueProposition,
           tone_of_voice_sliders: toneOfVoiceSliders,
           negative_keywords: negativeKeywords,
-          email_colors: emailColors
+          email_colors: emailColors,
         },
+        ...(heroImageUrl && { heroImage: { url: heroImageUrl } }),
         visualDesign: {
           // Keep some defaults for visual design
           email_width: '600px',
@@ -187,6 +190,37 @@ export default function EnhancedOnboarding({ token, onComplete, onBackToLanding 
       alert(`Upload failed: ${error.response?.data?.error || error.message || 'Failed to upload logo'}`);
     } finally {
       setUploadingLogo(false);
+    }
+  };
+
+  const handleHeroImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingHeroImage(true);
+    const formData = new FormData();
+    formData.append('heroImage', file);
+    formData.append('brandIndex', '0');
+
+    try {
+      const response = await axios.post(`${API}/api/media/upload-hero-image`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      const url = response.data.heroImageUrl || response.data.asset?.url;
+      if (url) {
+        const fullUrl = url.startsWith('http') ? url : `${API}${url}`;
+        setHeroImageUrl(fullUrl);
+      }
+      e.target.value = '';
+    } catch (error) {
+      console.error('Hero image upload error:', error);
+      alert(`Upload failed: ${error.response?.data?.error || error.message || 'Failed to upload hero image'}`);
+    } finally {
+      setUploadingHeroImage(false);
     }
   };
 
@@ -298,6 +332,43 @@ export default function EnhancedOnboarding({ token, onComplete, onBackToLanding 
                         <>
                           <Upload className="w-6 h-6" />
                           <span>Click to upload</span>
+                        </>
+                      )}
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Hero / Banner Image <span style={{ fontWeight: 400, color: '#9ca3af' }}>(optional)</span></label>
+                <p className="form-help">Used in your welcome email hero section</p>
+                <div className="logo-upload-area">
+                  {heroImageUrl ? (
+                    <div className="logo-preview">
+                      <img src={heroImageUrl} alt="Hero banner" style={{ maxWidth: '100%', maxHeight: '120px', objectFit: 'cover', borderRadius: '4px' }} />
+                      <button
+                        className="remove-logo"
+                        onClick={() => setHeroImageUrl('')}
+                        type="button"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="upload-trigger">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleHeroImageUpload}
+                        disabled={uploadingHeroImage}
+                        hidden
+                      />
+                      {uploadingHeroImage ? (
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                      ) : (
+                        <>
+                          <Upload className="w-6 h-6" />
+                          <span>Click to upload hero image</span>
                         </>
                       )}
                     </label>
@@ -558,6 +629,12 @@ export default function EnhancedOnboarding({ token, onComplete, onBackToLanding 
                     <div className="summary-item">
                       <strong>Logo:</strong>
                       <img src={logoUrl} alt="Logo" className="summary-logo" />
+                    </div>
+                  )}
+                  {heroImageUrl && (
+                    <div className="summary-item full-width">
+                      <strong>Hero Image:</strong>
+                      <img src={heroImageUrl} alt="Hero" style={{ maxWidth: '100%', maxHeight: '80px', objectFit: 'cover', borderRadius: '4px', marginTop: '4px' }} />
                     </div>
                   )}
                 </div>

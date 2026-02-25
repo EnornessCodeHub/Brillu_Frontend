@@ -10,35 +10,35 @@ import API from '../config/api.config';
 // Helper function to convert relative image URLs to absolute URLs
 function processImageUrls(html, apiBaseUrl) {
   if (!html) return html;
-  
+
   // Convert relative URLs that start with /uploads/ to absolute URLs
   // Handle multiple cases: double quotes, single quotes, and CSS url()
   let processed = html;
-  
+
   // Handle src="..." (double quotes)
   processed = processed.replace(
     /src="(\/uploads\/[^"]+)"/gi,
     (match, path) => `src="${apiBaseUrl}${path}"`
   );
-  
+
   // Handle src='...' (single quotes)
   processed = processed.replace(
     /src='(\/uploads\/[^']+)'/gi,
     (match, path) => `src="${apiBaseUrl}${path}"`
   );
-  
+
   // Handle background-image: url("...") or url('...')
   processed = processed.replace(
     /url\(["']?(\/uploads\/[^"')]+)["']?\)/gi,
     (match, path) => `url("${apiBaseUrl}${path}")`
   );
-  
+
   // Handle any remaining /uploads/ paths in href attributes
   processed = processed.replace(
     /href="(\/uploads\/[^"]+)"/gi,
     (match, path) => `href="${apiBaseUrl}${path}"`
   );
-  
+
   return processed;
 }
 
@@ -68,14 +68,12 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
     customPurpose: '',
     keyMessage: '',
     offer: '',
-    ctaGoal: '',
-    customCtaGoal: '',
-    ctaUrl: '',
-    toneModifier: ''
+    toneModifier: '',
+    ctas: [{ goal: '', customGoal: '', url: '' }]
   });
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [creativeNudge, setCreativeNudge] = useState('');
-  
+
   const [loading, setLoading] = useState(false);
   const [htmlPreview, setHtmlPreview] = useState('');
   const [error, setError] = useState('');
@@ -104,7 +102,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
   const [generatedCampaignId, setGeneratedCampaignId] = useState(null);
   const [campaignProgress, setCampaignProgress] = useState(0);
   const [currentState, setCurrentState] = useState(null);
-  
+
   // Per-component regeneration state
   const [campaignComponents, setCampaignComponents] = useState([]);
   const [regeneratingComponent, setRegeneratingComponent] = useState(null);
@@ -130,44 +128,49 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
   // Build prompt from structured form
   const buildPromptFromForm = () => {
     const parts = [];
-    
+
     if (intentForm.purpose) {
       const purposeLabel = PURPOSE_OPTIONS.find(p => p.value === intentForm.purpose)?.label || intentForm.purpose;
       parts.push(`Create a ${purposeLabel.toLowerCase()} email`);
     }
-    
+
     if (intentForm.keyMessage) {
       parts.push(`Key message: ${intentForm.keyMessage}`);
     }
-    
+
     if (intentForm.offer) {
       parts.push(`Offer: ${intentForm.offer}`);
     }
-    
-    if (intentForm.ctaGoal) {
-      const ctaLabel = intentForm.ctaGoal === 'custom' 
-        ? intentForm.customCtaGoal 
-        : CTA_GOALS.find(c => c.value === intentForm.ctaGoal)?.label;
-      if (ctaLabel) parts.push(`CTA: ${ctaLabel}`);
+
+    if (intentForm.ctas?.length > 0) {
+      intentForm.ctas.forEach((cta, i) => {
+        if (!cta.goal) return;
+        const ctaLabel = cta.goal === 'custom' ? cta.customGoal : CTA_GOALS.find(c => c.value === cta.goal)?.label;
+        if (ctaLabel) {
+          const ctaStr = intentForm.ctas.length > 1 ? `CTA ${i + 1}: ${ctaLabel}` : `CTA: ${ctaLabel}`;
+          parts.push(cta.url ? `${ctaStr} (${cta.url})` : ctaStr);
+        }
+      });
     }
-    
+
     if (intentForm.toneModifier) {
       parts.push(`Tone: ${intentForm.toneModifier}`);
     }
-    
+
     if (creativeNudge) {
       parts.push(creativeNudge);
     }
-    
+
     return parts.join('. ');
   };
 
   // Check if form is valid for generation
   const isFormValid = () => {
+    const hasValidCta = intentForm.ctas?.some(c => c.goal);
     return (
       intentForm.purpose &&
       intentForm.keyMessage &&
-      intentForm.ctaGoal &&
+      hasValidCta &&
       (selectedLayoutId || customLayouts.length === 0) // Layout required if layouts exist
     );
   };
@@ -185,13 +188,14 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
     }
   }, [token]);
 
-  // Pre-fill CTA URL from brand preferences
+  // Pre-fill first CTA URL from brand preferences
   useEffect(() => {
     if (hasPreferences && preferences?.brandInfo?.length > 0) {
       const brand = preferences.brandInfo[selectedBrandIndex] || preferences.brandInfo[0];
       const defaultCtaUrl = brand?.visualDesign?.default_cta_url;
-      if (defaultCtaUrl && !intentForm.ctaUrl) {
-        updateIntentForm('ctaUrl', defaultCtaUrl);
+      if (defaultCtaUrl && !intentForm.ctas?.[0]?.url) {
+        const updated = intentForm.ctas.map((c, i) => i === 0 ? { ...c, url: defaultCtaUrl } : c);
+        updateIntentForm('ctas', updated);
       }
     }
   }, [hasPreferences, preferences, selectedBrandIndex]);
@@ -247,7 +251,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
         ...(Array.isArray(data.systemDefaults) ? data.systemDefaults : []),
       ];
       setCustomLayouts(layouts);
-      
+
       // Auto-select first layout if none selected and layouts exist
       if (layouts.length > 0 && !selectedLayoutId) {
         setSelectedLayoutId(layouts[0]._id);
@@ -258,7 +262,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
     }
   };
 
-  // Reset image slot choices when layout changes
+  // Reset image slot choices and CTA count when layout changes
   useEffect(() => {
     if (selectedLayoutId) {
       const layout = customLayouts.find(l => l._id === selectedLayoutId);
@@ -271,6 +275,11 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
       } else {
         setImageSlotChoices({});
       }
+      const count = layout?.ctaCount && layout.ctaCount > 0 ? layout.ctaCount : 1;
+      setIntentForm(prev => ({
+        ...prev,
+        ctas: Array.from({ length: count }, (_, i) => prev.ctas[i] || { goal: '', customGoal: '', url: '' })
+      }));
     }
   }, [selectedLayoutId, customLayouts]);
 
@@ -279,8 +288,11 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
     if (token) {
       axios.get(`${API}/api/media`, { headers: { Authorization: `Bearer ${token}` } })
         .then(res => {
-          const assets = res.data?.data?.mediaAssets || res.data?.mediaAssets || [];
-          setMediaAssets(Array.isArray(assets) ? assets : []);
+          const assets = (res.data.assets || []).map(asset => ({
+            ...asset,
+            url: asset.url?.startsWith('http') ? asset.url : `${API}${asset.url}`
+          }));
+          setMediaAssets(assets);
         })
         .catch(() => setMediaAssets([]));
     }
@@ -300,8 +312,8 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
         setError('Please select a purpose');
       } else if (!intentForm.keyMessage) {
         setError('Please enter your key message');
-      } else if (!intentForm.ctaGoal) {
-        setError('Please select a CTA goal');
+      } else if (!intentForm.ctas?.some(c => c.goal)) {
+        setError('Please select at least one CTA goal');
       } else if (!selectedLayoutId && customLayouts.length > 0) {
         setError('Please select a template/layout');
       }
@@ -346,13 +358,21 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
       const endpoint = `${API}/api/ai/generate-email-stream`;
 
       // Build structured request body
+      const firstCta = intentForm.ctas?.[0];
       const requestBody = {
         // Structured intent fields
         purpose: intentForm.purpose === 'custom' ? intentForm.customPurpose : intentForm.purpose,
         keyMessage: intentForm.keyMessage,
         offer: intentForm.offer || undefined,
-        ctaGoal: intentForm.ctaGoal === 'custom' ? intentForm.customCtaGoal : intentForm.ctaGoal,
-        ctaUrl: intentForm.ctaUrl || undefined,
+        // Multiple CTAs array — backend expects label + url + style
+        ctas: intentForm.ctas?.filter(c => c.goal).map((c, i) => ({
+          label: c.goal === 'custom' ? c.customGoal : (CTA_GOALS.find(o => o.value === c.goal)?.label || c.goal),
+          url: c.url || undefined,
+          style: i === 0 ? 'primary' : 'secondary',
+        })),
+        // Backward compat: single CTA fields from first entry
+        ctaGoal: firstCta?.goal === 'custom' ? firstCta?.customGoal : firstCta?.goal,
+        ctaUrl: firstCta?.url || undefined,
         toneModifier: intentForm.toneModifier || undefined,
         creativeNudge: creativeNudge || undefined,
         // Also send as prompt for backward compatibility
@@ -367,7 +387,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
       if (selectedTemplate && selectedTemplate.id) {
         requestBody.templateId = selectedTemplate.id;
       }
-      
+
       // Include custom layout ID (required)
       if (selectedLayoutId) {
         requestBody.layoutId = selectedLayoutId;
@@ -378,7 +398,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
       if (nonDefaultChoices.length > 0) {
         requestBody.imageSlotChoices = imageSlotChoices;
       }
-      
+
       console.log('📦 [FRONTEND] Final request body:', requestBody);
 
       const response = await fetch(endpoint, {
@@ -526,7 +546,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
     return imageSlots.filter((slot) => {
       const slotId = slot.slotId || '';
       const slotIdLower = slotId.toLowerCase();
-      
+
       // Find parent component
       const parentComponent = components.find((comp) => {
         if (slotIdLower.startsWith(comp.component_id?.toLowerCase())) return true;
@@ -534,19 +554,19 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
         if (slotIdLower.startsWith(comp.type?.toLowerCase())) return true;
         return false;
       });
-      
+
       // Skip product blocks
       if (parentComponent?.type === 'product_block') return false;
-      
+
       // Skip if allow_ai_image is false
       if (parentComponent?.config?.allow_ai_image === false) return false;
-      
+
       // Skip locked components
       if (parentComponent?.config?.locked === true) return false;
-      
+
       // Skip product-type slots
       if (slot.type === 'product' || slotIdLower.includes('product')) return false;
-      
+
       return true;
     });
   };
@@ -554,7 +574,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
   // Handle per-component regeneration
   const handleRegenerateComponent = async (componentId) => {
     if (!generatedCampaignId) return;
-    
+
     setRegeneratingComponent(componentId);
     try {
       const response = await axios.post(
@@ -562,12 +582,17 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
         { component_id: componentId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
+      // If backend created a campaign copy, update to new campaign ID
+      if (response.data.newCampaignId) {
+        setGeneratedCampaignId(response.data.newCampaignId);
+      }
+
       // Update HTML preview with new content
       if (response.data.html) {
         setHtmlPreview(response.data.html);
       }
-      
+
       // Update components list if returned
       if (response.data.components) {
         setCampaignComponents(response.data.components);
@@ -583,7 +608,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
   // Handle image regeneration
   const handleRegenerateImage = async (slotId) => {
     if (!generatedCampaignId) return;
-    
+
     setRegeneratingImage(slotId);
     try {
       const response = await axios.post(
@@ -591,7 +616,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
         { slotId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       // Update HTML preview with new image
       if (response.data.html) {
         setHtmlPreview(response.data.html);
@@ -632,6 +657,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
       setStreamingStatus('Starting regeneration with new template...');
       setCampaignProgress(5);
 
+      const firstCta = intentForm.ctas?.[0];
       const requestBody = {
         prompt: originalPrompt,
         layoutId: templateId,  // Force the selected template
@@ -639,9 +665,13 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
         purpose: intentForm.purpose || currentCampaignBrief?.purpose,
         keyMessage: intentForm.keyMessage || currentCampaignBrief?.keyMessage,
         offer: intentForm.offer || currentCampaignBrief?.offer,
-        ctaGoal: intentForm.ctaGoal === 'custom'
-          ? intentForm.customCtaGoal
-          : (intentForm.ctaGoal || currentCampaignBrief?.ctaGoal),
+        ctas: intentForm.ctas?.filter(c => c.goal).map((c, i) => ({
+          label: c.goal === 'custom' ? c.customGoal : (CTA_GOALS.find(o => o.value === c.goal)?.label || c.goal),
+          url: c.url || undefined,
+          style: i === 0 ? 'primary' : 'secondary',
+        })),
+        ctaGoal: firstCta?.goal === 'custom' ? firstCta?.customGoal : (firstCta?.goal || currentCampaignBrief?.ctaGoal),
+        ctaUrl: firstCta?.url || undefined,
         toneModifier: intentForm.toneModifier || currentCampaignBrief?.toneModifier,
         creativeNudge: creativeNudge || currentCampaignBrief?.creativeNudge,
       };
@@ -691,17 +721,17 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
             </div>
             <div className="absolute inset-0 w-20 h-20 mx-auto rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
           </div>
-          
+
           <div>
             <h2 className="text-2xl font-bold mb-2">Creating Your Welcome Email</h2>
             <p className="text-muted-foreground">
               We're generating a personalized welcome email based on your brand settings...
             </p>
           </div>
-          
+
           <div className="space-y-2">
             <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500 ease-out"
                 style={{ width: `${campaignProgress}%` }}
               />
@@ -709,7 +739,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
             <p className="text-sm text-muted-foreground">{streamingStatus}</p>
             <p className="text-xs text-muted-foreground/70">{campaignProgress}% complete</p>
           </div>
-          
+
           <div className="pt-4 text-sm text-muted-foreground/60">
             This usually takes 60-90 seconds
           </div>
@@ -720,42 +750,14 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="w-6 h-6 text-primary" />
-          <h3 className="text-xl font-semibold">Create Your Email</h3>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Generate AI-powered emails
-        </p>
-      </div>
-
-      {/* Info Banner */}
-      {!hasPreferences && (
-        <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-3">
-              <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-blue-900 dark:text-blue-100">
-                💡 Tip: Set up your preferences to get more personalized emails!
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Prompt Input Card */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-medium">Create Your Email</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pt-6">
           {/* Brand Selector */}
           {hasPreferences && preferences?.brandInfo?.length > 1 && (
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-muted-foreground">Brand:</label>
-              <select 
+              <select
                 value={selectedBrandIndex}
                 onChange={(e) => setSelectedBrandIndex(parseInt(e.target.value))}
                 disabled={loading}
@@ -815,6 +817,32 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
               />
             </div>
 
+            {/* Advanced: Creative Direction */}
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+              >
+                {showAdvanced ? '▼' : '▶'} Creative Direction <span className="text-xs">(optional)</span>
+              </button>
+              {showAdvanced && (
+                <>
+                  <textarea
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                    rows={3}
+                    value={creativeNudge}
+                    onChange={(e) => setCreativeNudge(e.target.value)}
+                    placeholder="e.g., Use a storytelling approach, give it a summer vibe, make it feel exclusive and urgent..."
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Give the AI extra context — a style hint, a reference, or a unique angle for this email.
+                  </p>
+                </>
+              )}
+            </div>
+
             {/* Offer - Optional */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Offer (optional)</label>
@@ -826,50 +854,6 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
                 disabled={loading}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
-            </div>
-
-            {/* CTA Goal - Required */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                CTA Goal <span className="text-destructive">*</span>
-              </label>
-              <select
-                value={intentForm.ctaGoal}
-                onChange={(e) => updateIntentForm('ctaGoal', e.target.value)}
-                disabled={loading}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="">Select CTA...</option>
-                {CTA_GOALS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-              {intentForm.ctaGoal === 'custom' && (
-                <input
-                  type="text"
-                  value={intentForm.customCtaGoal}
-                  onChange={(e) => updateIntentForm('customCtaGoal', e.target.value)}
-                  placeholder="Enter custom CTA text"
-                  disabled={loading}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-2"
-                />
-              )}
-            </div>
-
-            {/* CTA URL - Optional */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">CTA URL (optional)</label>
-              <input
-                type="url"
-                value={intentForm.ctaUrl}
-                onChange={(e) => updateIntentForm('ctaUrl', e.target.value)}
-                placeholder="https://yoursite.com/landing"
-                disabled={loading}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-              <p className="text-xs text-muted-foreground">
-                Link for CTA buttons. Leave empty to use your brand default.
-              </p>
             </div>
 
             {/* Tone Modifier - Optional */}
@@ -939,9 +923,8 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
                       {customLayouts.map((layout) => (
                         <div
                           key={layout._id}
-                          className={`cursor-pointer border-2 rounded-lg p-3 transition-all hover:shadow-md ${
-                            selectedLayoutId === layout._id ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground'
-                          }`}
+                          className={`cursor-pointer border-2 rounded-lg p-3 transition-all hover:shadow-md ${selectedLayoutId === layout._id ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground'
+                            }`}
                           onClick={() => {
                             setSelectedLayoutId(layout._id);
                             setShowLayoutSelector(false);
@@ -991,6 +974,71 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
             </div>
           )}
 
+          {/* CTA Goals — driven by template's ctaCount */}
+          {selectedLayoutId && intentForm.ctas.length > 0 && (
+            <div className="space-y-3">
+              <label className="text-sm font-medium">
+                CTA Goals <span className="text-destructive">*</span>
+              </label>
+              <p className="text-xs text-muted-foreground">
+                {intentForm.ctas.length > 1 ? `This template supports ${intentForm.ctas.length} CTAs.` : 'Define the call-to-action for your email.'}
+              </p>
+              <div className="space-y-2">
+                {intentForm.ctas.map((cta, idx) => (
+                  <div key={idx} className="p-3 border border-border rounded-lg space-y-3 bg-muted/20">
+                    {intentForm.ctas.length > 1 && (
+                      <span className="text-xs font-medium text-muted-foreground">CTA {idx + 1}</span>
+                    )}
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground">CTA Text</label>
+                      <select
+                        value={cta.goal}
+                        onChange={(e) => {
+                          const updated = intentForm.ctas.map((c, i) => i === idx ? { ...c, goal: e.target.value } : c);
+                          updateIntentForm('ctas', updated);
+                        }}
+                        disabled={loading}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <option value="">Select button text...</option>
+                        {CTA_GOALS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                      {cta.goal === 'custom' && (
+                        <input
+                          type="text"
+                          value={cta.customGoal}
+                          onChange={(e) => {
+                            const updated = intentForm.ctas.map((c, i) => i === idx ? { ...c, customGoal: e.target.value } : c);
+                            updateIntentForm('ctas', updated);
+                          }}
+                          placeholder="e.g., Grab My Discount"
+                          disabled={loading}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
+                        />
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground">CTA URL <span className="font-normal">(optional)</span></label>
+                      <input
+                        type="url"
+                        value={cta.url}
+                        onChange={(e) => {
+                          const updated = intentForm.ctas.map((c, i) => i === idx ? { ...c, url: e.target.value } : c);
+                          updateIntentForm('ctas', updated);
+                        }}
+                        placeholder="https://yoursite.com/landing"
+                        disabled={loading}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Image Slot Choices — shown when a layout with image slots is selected */}
           {selectedLayoutId && getSelectedLayout()?.imageSlots?.length > 0 && (
             <div className="space-y-3">
@@ -1000,41 +1048,39 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
                 {getSelectedLayout().imageSlots.map(slot => {
                   const slotId = typeof slot === 'string' ? slot : slot.slotId;
                   return (
-                  <div key={slotId} className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 border rounded-lg bg-muted/30">
-                    <span className="text-sm font-medium sm:min-w-[120px] capitalize">{slotId.replace(/-/g, ' ')}</span>
-                    <div className="flex gap-2 flex-wrap">
-                      {['ai', 'media', 'skip'].map(source => (
-                        <button
-                          key={source}
-                          type="button"
-                          onClick={() => {
-                            if (source === 'media') {
-                              const slotCategory = slotId.includes('hero') ? 'hero' : slotId.includes('product') ? 'product' : 'general';
-                              const available = mediaAssets.filter(a => a.category === slotCategory || a.category === 'general');
-                              if (available.length === 0) {
-                                setImageSlotChoices(prev => ({ ...prev, [slotId]: { source: 'skip' } }));
-                                alert(`No ${slotCategory} images in your Media Library. A placeholder will be used — you can replace it later.`);
-                                return;
+                    <div key={slotId} className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 border rounded-lg bg-muted/30">
+                      <span className="text-sm font-medium sm:min-w-[120px] capitalize">{slotId.replace(/-/g, ' ')}</span>
+                      <div className="flex gap-2 flex-wrap">
+                        {['ai', 'media', 'skip'].map(source => (
+                          <button
+                            key={source}
+                            type="button"
+                            onClick={() => {
+                              if (source === 'media') {
+                                setShowMediaPicker(slotId);
+                              } else {
+                                setImageSlotChoices(prev => ({ ...prev, [slotId]: { source } }));
                               }
-                              setShowMediaPicker(slotId);
-                            } else {
-                              setImageSlotChoices(prev => ({ ...prev, [slotId]: { source } }));
-                            }
-                          }}
-                          className={`px-3 py-1.5 text-xs rounded-md border transition-all ${
-                            imageSlotChoices[slotId]?.source === source
-                              ? 'bg-primary text-primary-foreground border-primary'
-                              : 'bg-background border-border hover:border-muted-foreground'
-                          }`}
-                        >
-                          {source === 'ai' ? 'AI Generate' : source === 'media' ? 'Media Library' : 'Skip'}
-                        </button>
-                      ))}
+                            }}
+                            className={`px-3 py-1.5 text-xs rounded-md border transition-all ${imageSlotChoices[slotId]?.source === source
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-background border-border hover:border-muted-foreground'
+                              }`}
+                          >
+                            {source === 'ai' ? 'AI Generate' : source === 'media' ? 'Media Library' : 'Skip'}
+                          </button>
+                        ))}
+                      </div>
+                      {imageSlotChoices[slotId]?.source === 'media' && imageSlotChoices[slotId]?.mediaUrl && (
+                        <img src={imageSlotChoices[slotId].mediaUrl} alt="" className="w-10 h-10 rounded object-cover" />
+                      )}
+                      {imageSlotChoices[slotId]?.source === 'ai' && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          💡 AI image quality depends on your prompt detail. For consistent results, configure styles in{' '}
+                          <span className="font-medium">Knowledge Base → Image Settings</span>.
+                        </p>
+                      )}
                     </div>
-                    {imageSlotChoices[slotId]?.source === 'media' && imageSlotChoices[slotId]?.mediaUrl && (
-                      <img src={imageSlotChoices[slotId].mediaUrl} alt="" className="w-10 h-10 rounded object-cover" />
-                    )}
-                  </div>
                   );
                 })}
               </div>
@@ -1076,26 +1122,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
             </div>
           )}
 
-          {/* Advanced: Creative Nudge */}
-          <div className="space-y-2">
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
-            >
-              {showAdvanced ? '▼' : '▶'} Advanced: Creative Nudge
-            </button>
-            {showAdvanced && (
-              <textarea
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
-                rows={3}
-                value={creativeNudge}
-                onChange={(e) => setCreativeNudge(e.target.value)}
-                placeholder="Any additional creative direction for the AI..."
-                disabled={loading}
-              />
-            )}
-          </div>
+
 
           {/* Generate Button */}
           <Button
@@ -1127,7 +1154,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
                     Using your preferences
                   </Badge>
                 )}
-                
+
                 {/* Progress Bar */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -1350,14 +1377,14 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
 
             {/* Action Buttons */}
             <div className="flex gap-3 mt-4">
-              <Button 
+              <Button
                 variant="outline"
                 onClick={async () => {
                   if (!htmlPreview) {
                     alert('No HTML to copy');
                     return;
                   }
-                  
+
                   try {
                     let htmlToCopy = htmlPreview;
 
@@ -1392,7 +1419,7 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
                     alert('No HTML to download');
                     return;
                   }
-                  
+
                   try {
                     let htmlToDownload = htmlPreview;
 
@@ -1409,14 +1436,14 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
                         htmlToDownload = processImageUrls(htmlPreview, API);
                       }
                     }
-                    
-                  const element = document.createElement('a');
+
+                    const element = document.createElement('a');
                     const file = new Blob([htmlToDownload], { type: 'text/html' });
-                  element.href = URL.createObjectURL(file);
-                  element.download = 'email.html';
-                  document.body.appendChild(element);
-                  element.click();
-                  document.body.removeChild(element);
+                    element.href = URL.createObjectURL(file);
+                    element.download = 'email.html';
+                    document.body.appendChild(element);
+                    element.click();
+                    document.body.removeChild(element);
                     URL.revokeObjectURL(element.href);
                   } catch (error) {
                     console.error('Failed to download HTML:', error);
@@ -1458,11 +1485,10 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
                 {customLayouts.map(template => (
                   <div
                     key={template._id}
-                    className={`cursor-pointer border-2 rounded-lg p-3 transition-all hover:shadow-md ${
-                      template._id === selectedLayoutId
+                    className={`cursor-pointer border-2 rounded-lg p-3 transition-all hover:shadow-md ${template._id === selectedLayoutId
                         ? 'border-primary bg-primary/5'
                         : 'border-border hover:border-muted-foreground'
-                    }`}
+                      }`}
                     onClick={() => {
                       if (template._id !== selectedLayoutId) {
                         handleRegenerateWithTemplate(template._id);

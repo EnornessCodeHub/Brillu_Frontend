@@ -199,8 +199,8 @@ export default function DashboardLayout({ token, onLogout, welcomeCampaignId, on
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Header */}
-        <div className="border-b border-border bg-card/50 backdrop-blur-sm">
+        {/* Header — commented out, each section renders its own heading */}
+        {/* <div className="border-b border-border bg-card/50 backdrop-blur-sm">
           <div className="px-4 md:px-8 py-4 md:py-6 flex items-center gap-4">
             <button
               className="md:hidden p-2 min-w-[44px] min-h-[44px] rounded-lg hover:bg-accent/10 transition-colors flex-shrink-0 flex items-center justify-center"
@@ -211,14 +211,8 @@ export default function DashboardLayout({ token, onLogout, welcomeCampaignId, on
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <div>
-              <h1 className="text-xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
-              <p className="text-muted-foreground mt-1 text-sm md:text-base hidden sm:block">
-                Manage your email campaigns and preferences
-              </p>
-            </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
