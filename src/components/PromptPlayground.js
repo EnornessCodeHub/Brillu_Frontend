@@ -91,6 +91,8 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
   const [imageSlotChoices, setImageSlotChoices] = useState({}); // { slotName: { source: 'ai'|'media'|'skip', mediaUrl?, mediaId? } }
   const [showMediaPicker, setShowMediaPicker] = useState(null); // slot name currently picking for
   const [mediaAssets, setMediaAssets] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [showProductPicker, setShowProductPicker] = useState(null); // slot name currently picking product for
 
   // Streaming state
   const [streamingStatus, setStreamingStatus] = useState('');
@@ -295,6 +297,18 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
           setMediaAssets(assets);
         })
         .catch(() => setMediaAssets([]));
+    }
+  }, [token]);
+
+  // Load products for product image picker
+  useEffect(() => {
+    if (token) {
+      axios.get(`${API}/api/products`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => {
+          const items = res.data.products || res.data.data || res.data || [];
+          setProducts(Array.isArray(items) ? items : []);
+        })
+        .catch(() => setProducts([]));
     }
   }, [token]);
 
@@ -1083,6 +1097,115 @@ export default function PromptPlayground({ token, selectedTemplate, onOpenTempla
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Product Images Section — shown when layout has productImageSlots */}
+          {selectedLayoutId && getSelectedLayout()?.productImageSlots?.length > 0 && (
+            <div className="space-y-3">
+              <label className="text-sm font-medium">Product Images</label>
+              <p className="text-xs text-muted-foreground">
+                Assign a product or image to each product slot:
+              </p>
+              <div className="space-y-2">
+                {getSelectedLayout().productImageSlots.map((slot, index) => {
+                  const componentId = typeof slot === 'string' ? slot : (slot.componentId || slot.slotId || `product-${index}`);
+                  const slotKey = `product-${componentId}-${index}`;
+                  const choice = imageSlotChoices[slotKey];
+                  const slotLabel = (typeof slot === 'object' && slot.label) ? slot.label : `Product Image ${index + 1}`;
+
+                  return (
+                    <div key={slotKey} className="p-3 border rounded-lg bg-muted/30 space-y-2">
+                      <span className="text-sm font-medium capitalize">{slotLabel}</span>
+                      <div className="flex gap-2 flex-wrap items-center">
+                        {products.length > 0 ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setShowProductPicker(slotKey)}
+                              className={`px-3 py-1.5 text-xs rounded-md border transition-all ${choice?.source === 'catalog' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-muted-foreground'}`}
+                            >
+                              From Catalog
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setShowMediaPicker(slotKey)}
+                              className={`px-3 py-1.5 text-xs rounded-md border transition-all ${choice?.source === 'media' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-muted-foreground'}`}
+                            >
+                              Media Library
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setShowMediaPicker(slotKey)}
+                              className={`px-3 py-1.5 text-xs rounded-md border transition-all ${choice?.source === 'media' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border hover:border-muted-foreground'}`}
+                            >
+                              Media Library
+                            </button>
+                            <p className="text-xs text-muted-foreground">No products in catalog — use Media Library instead.</p>
+                          </>
+                        )}
+                        {choice?.source === 'catalog' && choice?.productId && (() => {
+                          const p = products.find(pr => (pr._id || pr.id) === choice.productId);
+                          return p ? (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              {p.imageUrl && <img src={p.imageUrl} alt="" className="w-8 h-8 rounded object-cover" />}
+                              <span className="truncate max-w-[120px]">{p.name}</span>
+                              <button type="button" onClick={() => setImageSlotChoices(prev => { const n = {...prev}; delete n[slotKey]; return n; })} className="text-destructive hover:text-destructive/80"><X className="w-3 h-3" /></button>
+                            </div>
+                          ) : null;
+                        })()}
+                        {choice?.source === 'media' && choice?.mediaUrl && (
+                          <div className="flex items-center gap-2">
+                            <img src={choice.mediaUrl} alt="" className="w-8 h-8 rounded object-cover" />
+                            <button type="button" onClick={() => setImageSlotChoices(prev => { const n = {...prev}; delete n[slotKey]; return n; })} className="text-destructive hover:text-destructive/80"><X className="w-3 h-3" /></button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Product Picker Modal */}
+          {showProductPicker && (
+            <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowProductPicker(null)}>
+              <div className="bg-background rounded-lg shadow-xl max-w-lg w-full max-h-[70vh] overflow-auto p-4" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold">Select Product</h3>
+                  <button onClick={() => setShowProductPicker(null)}><X className="w-5 h-5" /></button>
+                </div>
+                <div className="space-y-2">
+                  {products.map(product => {
+                    const pid = product._id || product.id;
+                    return (
+                      <div
+                        key={pid}
+                        className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:border-primary transition-colors"
+                        onClick={() => {
+                          setImageSlotChoices(prev => ({
+                            ...prev,
+                            [showProductPicker]: { source: 'catalog', productId: pid }
+                          }));
+                          setShowProductPicker(null);
+                        }}
+                      >
+                        {product.imageUrl && (
+                          <img src={product.imageUrl} alt={product.name || ''} className="w-12 h-12 rounded object-cover flex-shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{product.name}</p>
+                          {product.price && <p className="text-xs text-muted-foreground">{product.price}</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}
