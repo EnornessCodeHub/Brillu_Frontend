@@ -730,6 +730,7 @@ export function VisualDesignSettings({ token }) {
         />
       </div>
 
+      {/* HIDDEN: Spacing Rules
       <div className="form-group">
         <label>Spacing Rules</label>
         <select value={visualDesign.spacing_rules} onChange={(e) => setVisualDesign({ ...visualDesign, spacing_rules: e.target.value })}>
@@ -738,6 +739,7 @@ export function VisualDesignSettings({ token }) {
           <option value="loose">Loose</option>
         </select>
       </div>
+      */}
 
       <div className="form-group">
         <label>Button Style</label>
@@ -809,6 +811,7 @@ export function VisualDesignSettings({ token }) {
         </select>
       </div>
 
+      {/* HIDDEN: Visual Complexity
       <div className="form-group">
         <label>Visual Complexity</label>
         <select value={visualDesign.visual_complexity[0] || 'medium'} onChange={(e) => setVisualDesign({ ...visualDesign, visual_complexity: [e.target.value] })}>
@@ -819,6 +822,7 @@ export function VisualDesignSettings({ token }) {
           <option value="highly-detailed">Highly-Detailed</option>
         </select>
       </div>
+      */}
 
       <button className="btn btn-primary" onClick={handleSave}>
         💾 Save Visual Design
